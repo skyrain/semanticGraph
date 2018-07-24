@@ -32,7 +32,7 @@
 						<configuration>
 							<classifier>spring-boot</classifier>
 							<mainClass>
-								org.qd.gout.owl.reason.EntryPoint
+								org.semantic.entrypoint.EntryPoint
 							</mainClass>
 						</configuration>
 					</execution>
