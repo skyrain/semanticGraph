@@ -1,4 +1,4 @@
-package org.semantic.entrypoint;
+package org.semantic;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;

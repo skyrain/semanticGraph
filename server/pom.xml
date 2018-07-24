@@ -32,7 +32,7 @@
 						<configuration>
 							<classifier>spring-boot</classifier>
 							<mainClass>
-								org.semantic.entrypoint.EntryPoint
+								org.semantic.EntryPoint
 							</mainClass>
 						</configuration>
 					</execution>
@@ -107,5 +107,15 @@
 			<id>stardog-public</id>
 			<url>http://maven.stardog.com</url>
 		</repository>
+		<repository>
+			<id>spring-releases</id>
+			<url>https://repo.spring.io/libs-release</url>
+		</repository>
 	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>spring-releases</id>
+			<url>https://repo.spring.io/libs-release</url>
+		</pluginRepository>
+	</pluginRepositories>
 </project>

@@ -1,4 +1,4 @@
-package org.semantic.entrypoint;
+package org.semantic;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

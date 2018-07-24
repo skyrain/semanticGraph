@@ -29,14 +29,6 @@ public class QueryService {
 		return new ValidateResponse("hello");
 	}
 
-	@CrossOrigin
-	@RequestMapping(path = "/test", method = RequestMethod.GET)
-	public ValidateResponse validateMatchedKnowledge() {
-		
-		return new ValidateResponse("hello");
-	}
-
-	
 	private void test() {
 		ReasoningConnection connection = ConnectionConfiguration.from(DB_URL).credentials("admin", "admin")
 				.reasoning(true).connect().as(ReasoningConnection.class);
