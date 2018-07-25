@@ -26,29 +26,32 @@ public class QueryService {
 			+ "PREFIX dct: <http://purl.org/dc/terms/>" + "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> ");
 
 	private String DB_URL = "http://localhost:5820/personDB";
+	
+	private String DBR = "http://dbpedia.org/resource/";
+	private String DBR_CATEGORY = "http://dbpedia.org/resource/Category:";
 
 	@CrossOrigin
 	@RequestMapping(path = "/basicExplore", method = RequestMethod.POST)
 	public List<InfoResponse> basicExlpore(@RequestBody Search search) {
 		String criteria = normalizeSearch(search.getName());
-		return searchSearch(buildBasicQuery(criteria), null);
+		return search(buildBasicQuery(criteria), null);
 	}
 
 	@CrossOrigin
 	@RequestMapping(path = "/broaderExplore", method = RequestMethod.POST)
 	public List<InfoResponse> broaderExplore(@RequestBody Search search) {
 		String criteria = normalizeSearch(search.getName());
-		return searchSearch(buildBroaderQuery(criteria), "broader");
+		return search(buildBroaderQuery(criteria), "broader");
 	}
 
 	@CrossOrigin
 	@RequestMapping(path = "/narrowerExplore", method = RequestMethod.POST)
 	public List<InfoResponse> narrowerExplore(@RequestBody Search search) {
 		String criteria = normalizeSearch(search.getName());
-		return searchSearch(buildNarrowerQuery(criteria), "narrower");
+		return search(buildNarrowerQuery(criteria), "narrower");
 	}
 	
-	private List<InfoResponse> searchSearch(String detailQuery, String resourceName) {
+	private List<InfoResponse> search(String detailQuery, String resourceName) {
 		List<InfoResponse> ret = new ArrayList<>();
 
 		ReasoningConnection connection = ConnectionConfiguration.from(DB_URL).credentials("admin", "admin")
@@ -115,8 +118,6 @@ public class QueryService {
 			if (arr[i - 1] == '_')
 				if (arr[i] == '_')
 					j--;
-				else
-					arr[i] -= 32;
 			arr[j] = arr[i];
 		}
 
@@ -130,15 +131,16 @@ public class QueryService {
 		"select * " +
 		"where" +
 		"{  " +
-		"    optional{" +
-		"        dbr:"+ criteria + " foaf:homepage ?homePage." +
-		"    }" +
-		"    optional{" +
-		"        dbr:Category:"+ criteria + " rdfs:label ?label." +
+		" 	?existCriteria foaf:homepage ?existHomePage ." +
+		"   FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR + criteria + "\"))" +		
+		"   optional{" +
+		" 		?existLabel rdfs:label ?label ." +
+		"   	FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR_CATEGORY + criteria + "\"))" +
 		"    }" +
 		"	optional {" +
-		"		dbr:" + criteria +" owl:sameAs ?geoLink ." +
-		"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
+		" 		?existGeoLink  owl:sameAs ?geoLink ." +
+		"   	FILTER (lcase(str(?existGeoLink)) = lcase(\"" + DBR + criteria + "\"))" +
+		"		FILTER (EXISTS{?existGeoLink rdf:type dbo:Settlement})" +
 		"	}" +
 		"}";
 	}
@@ -148,7 +150,8 @@ public class QueryService {
 				"select * " +
 				"where" +
 				"{  " +
-				"    dbr:Category:"+ criteria + " skos:broader ?broader." +				
+				" 	?existCriteria  skos:broader ?broader." +
+				"   FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR_CATEGORY + criteria + "\"))" +	
 				"    optional{" +
 				"        ?broader foaf:homepage ?homePage ." +
 				"    }" +
@@ -163,7 +166,8 @@ public class QueryService {
 				"select * " +
 				"where" +
 				"{  " +
-				"    ?narrower skos:broader dbr:Category:"+ criteria + " ." +
+				" 	?narrower skos:broader ?existCriteria ." +
+				"   FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR_CATEGORY + criteria + "\"))" +
 				"    optional{" +
 				"        ?narrower foaf:homepage ?homePage ." +
 				"    }" +
