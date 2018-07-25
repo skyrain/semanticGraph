@@ -27,8 +27,8 @@ public class QueryService {
 
 	private String DB_URL = "http://localhost:5820/personDB";
 	
-	private String DBR = "http://dbpedia.org/resource/";
-	private String DBR_CATEGORY = "http://dbpedia.org/resource/Category:";
+	private String DBR = "dbr:";
+	private String DBR_CATEGORY = "dbr:Category:";
 
 	@CrossOrigin
 	@RequestMapping(path = "/basicExplore", method = RequestMethod.POST)
@@ -126,24 +126,41 @@ public class QueryService {
 		return res;
 	}
 
-	private String buildBasicQuery(String criteria) {
-		return 				
-		"select * " +
-		"where" +
-		"{  " +
-		" 	?existCriteria foaf:homepage ?homePage ." +
-		"   FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR + criteria + "\"))" +		
-		"   optional{" +
-		" 		?existLabel rdfs:label ?label ." +
-		"   	FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR_CATEGORY + criteria + "\"))" +
-		"    }" +
-		"	optional {" +
-		" 		?existGeoLink  owl:sameAs ?geoLink ." +
-		"   	FILTER (lcase(str(?existGeoLink)) = lcase(\"" + DBR + criteria + "\"))" +
-		// NOT EXISTS here unfortunately means exists
-		"		FILTER (NOT EXISTS{?existGeoLink rdf:type dbo:Settlement})" +
-		"	}" +
-		"}";
+	private String buildPossibleMatches(String prefix, String criteria) {
+		StringBuilder ret = new StringBuilder("");
+		
+		for(String match: generateMatches(criteria)){
+			ret.append(prefix).append(match).append(" ");
+		}		
+		return ret.toString();
+	}
+	
+	private List<String> generateMatches(String origin){
+		List<String> ret = new ArrayList<>();
+		origin.toLowerCase();
+		generatorHelper(new StringBuilder(), origin, 0, ret, true);
+		return ret;
+	}
+
+	private void generatorHelper(StringBuilder tmp, String origin, int idx, List<String> list, boolean change) {
+		if(idx == origin.length()){
+			list.add(tmp.toString());
+			return;
+		}
+		char c = origin.charAt(idx);
+		
+		if(change){
+			generatorHelper(new StringBuilder(tmp).append(c), origin, idx + 1, list, false);
+			generatorHelper(new StringBuilder(tmp).append(Character.toUpperCase(c)), origin, idx + 1, list, false);
+		}else{
+			tmp.append(c);
+		
+			if(c == '_' || c == ' '){
+				generatorHelper(tmp, origin, idx + 1, list, true);
+			}else{
+				generatorHelper(tmp, origin, idx + 1, list, false);
+			}
+		}
 	}
 
 	private String buildBroaderQuery(String criteria) {
@@ -151,8 +168,8 @@ public class QueryService {
 				"select * " +
 				"where" +
 				"{  " +
-				" 	?existCriteria  skos:broader ?broader." +
-				"   FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR_CATEGORY + criteria + "\"))" +	
+				"   values ?existCriteria {" + buildPossibleMatches(DBR_CATEGORY, criteria) + "} ." +
+				" 	?existCriteria  skos:broader ?broader." +	
 				"    optional{" +
 				"        ?broader foaf:homepage ?homePage ." +
 				"    }" +
@@ -167,8 +184,8 @@ public class QueryService {
 				"select * " +
 				"where" +
 				"{  " +
+				"   values ?existCriteria {" + buildPossibleMatches(DBR_CATEGORY, criteria) + "} ." +
 				" 	?narrower skos:broader ?existCriteria ." +
-				"   FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR_CATEGORY + criteria + "\"))" +
 				"    optional{" +
 				"        ?narrower foaf:homepage ?homePage ." +
 				"    }" +
@@ -177,4 +194,25 @@ public class QueryService {
 				"    }" +
 				"}LIMIT 100";
 	}
+	
+	private String buildBasicQuery(String criteria) {
+		return 				
+		"select * " +
+		"where" +
+		"{  " +
+		"   values ?existLabel {" + buildPossibleMatches(DBR_CATEGORY, criteria) + "} ." +
+		" 		?existLabel rdfs:label ?label ." +
+		"   optional{" +
+		"   values ?existCriteria {" + buildPossibleMatches(DBR, criteria) + "} ." +
+		" 	?existCriteria foaf:homepage ?homePage ." +
+		"    }" +
+		"	optional {" +
+		"   values ?existGeoLink {" + buildPossibleMatches(DBR, criteria) + "} ." +
+		" 		?existGeoLink  owl:sameAs ?geoLink ." +	
+		// NOT EXISTS here unfortunately means exists
+		"		FILTER (NOT EXISTS{?existGeoLink rdf:type dbo:Settlement})" +
+		"	}" +
+		"}";
+	}
+
 }
