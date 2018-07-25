@@ -2,10 +2,10 @@ package org.semantic.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Movie {
+public class Search {
 	private String name;
 
-	public Movie(@JsonProperty("name") String name) {
+	public Search(@JsonProperty("name") String name) {
 		this.name = name;
 	}
 
