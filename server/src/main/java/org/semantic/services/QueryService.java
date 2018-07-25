@@ -140,7 +140,8 @@ public class QueryService {
 		"	optional {" +
 		" 		?existGeoLink  owl:sameAs ?geoLink ." +
 		"   	FILTER (lcase(str(?existGeoLink)) = lcase(\"" + DBR + criteria + "\"))" +
-		"		FILTER (EXISTS{?existGeoLink rdf:type dbo:Settlement})" +
+		// NOT EXISTS here unfortunately means exists
+		"		FILTER (NOT EXISTS{?existGeoLink rdf:type dbo:Settlement})" +
 		"	}" +
 		"}";
 	}
