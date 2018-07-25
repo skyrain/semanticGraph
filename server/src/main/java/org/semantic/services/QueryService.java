@@ -91,14 +91,14 @@ public class QueryService {
 	}
 	
 	private KnowledgeResponse resultBuilder(String val) {			
-		int homePageIdx = val.indexOf("homePage");
-		int labelIdx = val.indexOf("label");
-		int broader1Idx = val.indexOf("broader1");
-		int broader1HomePageIdx = val.indexOf("broader1HomePage");
-		int broader1LabelIdx = val.indexOf("broader1Label");
-		int broader2Idx = val.indexOf("broader2");
-		int broader2HomePageIdx = val.indexOf("broader2HomePage");
-		int broader2LabelIdx = val.indexOf("broader2Label");
+		int homePageIdx = val.indexOf("homePage") + "homePage".length();
+		int labelIdx = val.indexOf("label") + "label".length();
+		int broader1Idx = val.indexOf("broader1") + "broader1".length();
+		int broader1HomePageIdx = val.indexOf("broader1HomePage") + "broader1HomePage".length();
+		int broader1LabelIdx = val.indexOf("broader1Label") + "broader1Label".length();
+		int broader2Idx = val.indexOf("broader2") + "broader2".length();
+		int broader2HomePageIdx = val.indexOf("broader2HomePage") + "broader2HomePage".length();
+		int broader2LabelIdx = val.indexOf("broader2Label") + "broader2Label".length() + 1;
 		
 		String broader2LabelVal = broader2LabelIdx == -1? null: val.substring(broader2LabelIdx, val.length());
 		
@@ -114,7 +114,7 @@ public class QueryService {
 
 	private String responseBuilder(int propertyIdx, String val) {
 		if(propertyIdx != -1){
-			return val.substring(propertyIdx, val.indexOf(";", propertyIdx));
+			return val.substring(propertyIdx + 1, val.indexOf(";", propertyIdx));
 		}
 		return null;
 	}
