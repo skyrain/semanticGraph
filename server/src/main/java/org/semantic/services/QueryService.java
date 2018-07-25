@@ -31,24 +31,24 @@ public class QueryService {
 	@RequestMapping(path = "/basicExplore", method = RequestMethod.POST)
 	public List<InfoResponse> basicExlpore(@RequestBody Search search) {
 		String criteria = normalizeSearch(search.getName());
-		return search(buildBasicQuery(criteria));
+		return searchSearch(buildBasicQuery(criteria), null);
 	}
 
 	@CrossOrigin
 	@RequestMapping(path = "/broaderExplore", method = RequestMethod.POST)
 	public List<InfoResponse> broaderExplore(@RequestBody Search search) {
 		String criteria = normalizeSearch(search.getName());
-		return search(buildBroaderQuery(criteria));
+		return searchSearch(buildBroaderQuery(criteria), "broader");
 	}
 
 	@CrossOrigin
 	@RequestMapping(path = "/narrowerExplore", method = RequestMethod.POST)
 	public List<InfoResponse> narrowerExplore(@RequestBody Search search) {
 		String criteria = normalizeSearch(search.getName());
-		return search(buildNarrowerQuery(criteria));
+		return searchSearch(buildNarrowerQuery(criteria), "narrower");
 	}
-
-	private List<InfoResponse> search(String detailQuery) {
+	
+	private List<InfoResponse> searchSearch(String detailQuery, String resourceName) {
 		List<InfoResponse> ret = new ArrayList<>();
 
 		ReasoningConnection connection = ConnectionConfiguration.from(DB_URL).credentials("admin", "admin")
@@ -65,7 +65,7 @@ public class QueryService {
 				String val = result.next().toString();
 
 				if (val != null) {
-					ret.add(resultBuilder(val));
+					ret.add(resultBuilder(val, resourceName));
 					System.out.println(val);
 				}
 			}
@@ -77,7 +77,10 @@ public class QueryService {
 		return ret;
 	}
 
-	private InfoResponse resultBuilder(String val) {
+	private InfoResponse resultBuilder(String val, String resourceName) {
+		int resourceNameIdx = resourceName == null? -1: val.indexOf(resourceName);
+		resourceNameIdx = resourceNameIdx == -1 ? -1 : resourceNameIdx + resourceName.length();
+		
 		int homePageIdx = val.indexOf("homePage");
 		homePageIdx = homePageIdx == -1 ? -1 : homePageIdx + "homePage".length();
 		int labelIdx = val.indexOf("label");
@@ -85,7 +88,7 @@ public class QueryService {
 		int geoLinkIdx = val.indexOf("geoLink");
 		geoLinkIdx = geoLinkIdx == -1 ? -1 : geoLinkIdx + "geoLink".length();
 
-		return new InfoResponse(responseBuilder(homePageIdx, val), responseBuilder(labelIdx, val),
+		return new InfoResponse(responseBuilder(resourceNameIdx, val), responseBuilder(homePageIdx, val), responseBuilder(labelIdx, val),
 				responseBuilder(geoLinkIdx, val));
 	}
 
@@ -154,10 +157,6 @@ public class QueryService {
 				"    optional{" +
 				"        ?broader rdfs:label ?label .    " +
 				"    }" +
-				"	optional {" +
-				"		dbr:" + criteria +" owl:sameAs ?geoLink ." +
-				"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
-				"	}" +
 				"}LIMIT 100";
 	}
 	
@@ -167,7 +166,7 @@ public class QueryService {
 				"where" +
 				"{  " +
 				"    optional{ " +
-				"        dbr:Category:"+ criteria + " skos:narrower ?narrower." +
+				"    	?narrower skos:broader dbr:Category:"+ criteria + " ." +
 				"    }" +
 				"    optional{" +
 				"        ?narrower foaf:homepage ?homePage ." +
@@ -175,10 +174,6 @@ public class QueryService {
 				"    optional{" +
 				"        ?narrower rdfs:label ?label .    " +
 				"    }" +
-				"	optional {" +
-				"		dbr:" + criteria +" owl:sameAs ?geoLink ." +
-				"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
-				"	}" +
 				"}LIMIT 100";
 	}
 }

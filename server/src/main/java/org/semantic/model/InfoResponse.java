@@ -6,12 +6,22 @@ public class InfoResponse {
 	private String homePage;
 	private String label;
 	private String geoLink;
+	private String resourceName;
 
-	public InfoResponse(@JsonProperty("homePage") String homePage, @JsonProperty("label") String label,
-			@JsonProperty("geoLink") String geoLink) {
+	public InfoResponse(@JsonProperty("resourceName") String resourceName, @JsonProperty("homePage") String homePage,
+			@JsonProperty("label") String label, @JsonProperty("geoLink") String geoLink) {
+		this.resourceName = resourceName;
 		this.homePage = homePage;
 		this.label = label;
 		this.geoLink = geoLink;
+	}
+
+	public String getResourceName() {
+		return resourceName;
+	}
+
+	public void setResourceName(String resourceName) {
+		this.resourceName = resourceName;
 	}
 
 	public String getHomePage() {
