@@ -131,7 +131,7 @@ public class QueryService {
 		"select * " +
 		"where" +
 		"{  " +
-		" 	?existCriteria foaf:homepage ?existHomePage ." +
+		" 	?existCriteria foaf:homepage ?homePage ." +
 		"   FILTER (lcase(str(?existCriteria)) = lcase(\"" + DBR + criteria + "\"))" +		
 		"   optional{" +
 		" 		?existLabel rdfs:label ?label ." +
