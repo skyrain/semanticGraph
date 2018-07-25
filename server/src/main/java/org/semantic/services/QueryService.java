@@ -91,14 +91,22 @@ public class QueryService {
 	}
 	
 	private KnowledgeResponse resultBuilder(String val) {			
-		int homePageIdx = val.indexOf("homePage") + "homePage".length();
-		int labelIdx = val.indexOf("label") + "label".length();
-		int broader1Idx = val.indexOf("broader1") + "broader1".length();
-		int broader1HomePageIdx = val.indexOf("broader1HomePage") + "broader1HomePage".length();
-		int broader1LabelIdx = val.indexOf("broader1Label") + "broader1Label".length();
-		int broader2Idx = val.indexOf("broader2") + "broader2".length();
-		int broader2HomePageIdx = val.indexOf("broader2HomePage") + "broader2HomePage".length();
-		int broader2LabelIdx = val.indexOf("broader2Label") + "broader2Label".length() + 1;
+		int homePageIdx = val.indexOf("homePage");
+		homePageIdx = homePageIdx  == -1? -1: homePageIdx + "homePage".length();
+		int labelIdx = val.indexOf("label");
+		labelIdx = labelIdx  == -1? -1: labelIdx + "label".length(); 
+		int broader1Idx = val.indexOf("broader1");
+		broader1Idx = broader1Idx  == -1? -1: broader1Idx + "broader1".length(); 
+		int broader1HomePageIdx = val.indexOf("broader1HomePage");
+		broader1HomePageIdx = broader1HomePageIdx  == -1? -1: broader1HomePageIdx + "broader1HomePage".length(); 
+		int broader1LabelIdx = val.indexOf("broader1Label");
+		broader1LabelIdx = broader1LabelIdx  == -1? -1: broader1LabelIdx + "broader1Label".length(); 
+		int broader2Idx = val.indexOf("broader2");
+		broader2Idx = broader2Idx  == -1? -1: broader2Idx + "broader2".length(); 
+		int broader2HomePageIdx = val.indexOf("broader2HomePage");
+		broader2HomePageIdx = broader2HomePageIdx  == -1? -1: broader2HomePageIdx + "broader2HomePage".length(); 
+		int broader2LabelIdx = val.indexOf("broader2Label");
+		broader2LabelIdx = broader2LabelIdx == -1? -1: broader2LabelIdx + "broader2Label".length() + 1;
 		
 		String broader2LabelVal = broader2LabelIdx == -1? null: val.substring(broader2LabelIdx, val.length());
 		
