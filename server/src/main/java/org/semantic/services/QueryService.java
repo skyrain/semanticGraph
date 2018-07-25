@@ -148,9 +148,7 @@ public class QueryService {
 				"select * " +
 				"where" +
 				"{  " +
-				"    optional{ " +
-				"        dbr:Category:"+ criteria + " skos:broader ?broader." +
-				"    }" +
+				"    dbr:Category:"+ criteria + " skos:broader ?broader." +				
 				"    optional{" +
 				"        ?broader foaf:homepage ?homePage ." +
 				"    }" +
@@ -165,9 +163,7 @@ public class QueryService {
 				"select * " +
 				"where" +
 				"{  " +
-				"    optional{ " +
-				"    	?narrower skos:broader dbr:Category:"+ criteria + " ." +
-				"    }" +
+				"    ?narrower skos:broader dbr:Category:"+ criteria + " ." +
 				"    optional{" +
 				"        ?narrower foaf:homepage ?homePage ." +
 				"    }" +
