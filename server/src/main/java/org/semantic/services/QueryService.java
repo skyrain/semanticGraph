@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.semantic.model.InfoResponse;
 import org.semantic.model.Search;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,52 +29,27 @@ public class QueryService {
 	private String DB_URL = "http://localhost:5820/personDB";
 
 	@CrossOrigin
-	@RequestMapping(path = "/graphExplore", method = RequestMethod.POST)
-	public List<KnowledgeResponse> validateMatchedKnowledge(@RequestBody Search search) {
-		return initSearch(search);
+	@RequestMapping(path = "/basicExplore", method = RequestMethod.POST)
+	public List<InfoResponse> basicExlpore(@RequestBody Search search) {
+		String criteria = normalizeSearch(search.getName());
+		return search(buildBasicQuery(criteria));
+	}
+	
+	@CrossOrigin
+	@RequestMapping(path = "/broaderExplore", method = RequestMethod.POST)
+	public List<InfoResponse> broaderExplore(@RequestBody Search search) {
+		String criteria = normalizeSearch(search.getName());
+		return search(buildBroaderQuery(criteria));
 	}
 
-	private List<KnowledgeResponse> initSearch(Search search) {
-		List<KnowledgeResponse> ret = new ArrayList<>();
+	private List<InfoResponse> search(String detailQuery) {
+		List<InfoResponse> ret = new ArrayList<>();
 		
 		ReasoningConnection connection = ConnectionConfiguration.from(DB_URL).credentials("admin", "admin")
 				.reasoning(true).connect().as(ReasoningConnection.class);
-
-		String criteria = normalizeSearch(search.getName());
+		
 		StringBuilder query = new StringBuilder(PREFIXES);
-		query.append(
-				"select * " +
-				"where" +
-				"{  " +
-				"    optional{" +
-				"        dbr:"+ criteria + " foaf:homepage ?homePage." +
-				"    }" +
-				"    optional{" +
-				"        dbr:Category:"+ criteria + " rdfs:label ?label." +
-				"    }" +
-				"    optional{ " +
-				"        dbr:Category:"+ criteria + " skos:broader ?broader1." +
-				"    }" +
-				"    optional{" +
-				"        ?broader1 foaf:homepage ?broader1HomePage ." +
-				"    }" +
-				"    optional{" +
-				"        ?broader1 rdfs:label ?broader1Label .    " +
-				"    }" +
-				"    optional{" +
-				"        ?broader1 skos:broader ?broader2 ." +
-				"    }" +
-				"    optional{" +
-				"        ?broader2 foaf:homepage ?broader2HomePage ." +
-				"    }" +
-				"    optional{" +
-				"        ?broader2 rdfs:label ?broader2Label ." +
-				"    }" +
-				"	optional {" +
-				"		dbr:" + criteria +" owl:sameAs ?originalGeoLink ." +
-				"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
-				"	}" +
-				"}");
+		query.append(detailQuery);
 
 		SelectQuery selectQuery = connection.select(query.toString());
 		TupleQueryResult result = selectQuery.execute();
@@ -94,39 +70,57 @@ public class QueryService {
 		connection.close();
 		return ret;
 	}
+
+	private String buildBasicQuery(String criteria) {
+		return 				
+		"select * " +
+		"where" +
+		"{  " +
+		"    optional{" +
+		"        dbr:"+ criteria + " foaf:homepage ?homePage." +
+		"    }" +
+		"    optional{" +
+		"        dbr:Category:"+ criteria + " rdfs:label ?label." +
+		"    }" +
+		"	optional {" +
+		"		dbr:" + criteria +" owl:sameAs ?geoLink ." +
+		"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
+		"	}" +
+		"}";
+	}
+
+	private String buildBroaderQuery(String criteria) {
+		return 
+				"select * " +
+				"where" +
+				"{  " +
+				"    optional{ " +
+				"        dbr:Category:"+ criteria + " skos:broader ?broader." +
+				"    }" +
+				"    optional{" +
+				"        ?broader foaf:homepage ?homePage ." +
+				"    }" +
+				"    optional{" +
+				"        ?broader rdfs:label ?label .    " +
+				"    }" +
+				"	optional {" +
+				"		dbr:" + criteria +" owl:sameAs ?geoLink ." +
+				"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
+				"	}" +
+				"}";
+	}
 	
-	private KnowledgeResponse resultBuilder(String val) {			
+	private InfoResponse resultBuilder(String val) {			
 		int homePageIdx = val.indexOf("homePage");
 		homePageIdx = homePageIdx  == -1? -1: homePageIdx + "homePage".length();
 		int labelIdx = val.indexOf("label");
-		labelIdx = labelIdx  == -1? -1: labelIdx + "label".length(); 
-		int broader1Idx = val.indexOf("broader1");
-		broader1Idx = broader1Idx  == -1? -1: broader1Idx + "broader1".length(); 
-		int broader1HomePageIdx = val.indexOf("broader1HomePage");
-		broader1HomePageIdx = broader1HomePageIdx  == -1? -1: broader1HomePageIdx + "broader1HomePage".length(); 
-		int broader1LabelIdx = val.indexOf("broader1Label");
-		broader1LabelIdx = broader1LabelIdx  == -1? -1: broader1LabelIdx + "broader1Label".length(); 
-		int broader2Idx = val.indexOf("broader2");
-		broader2Idx = broader2Idx  == -1? -1: broader2Idx + "broader2".length(); 
-		int broader2HomePageIdx = val.indexOf("broader2HomePage");
-		broader2HomePageIdx = broader2HomePageIdx  == -1? -1: broader2HomePageIdx + "broader2HomePage".length(); 
-		int broader2LabelIdx = val.indexOf("broader2Label");
-		broader2LabelIdx = broader2LabelIdx == -1? -1: broader2LabelIdx + "broader2Label".length();
+		labelIdx = labelIdx  == -1? -1: labelIdx + "label".length(); 		
+		int geoLinkIdx = val.indexOf("geoLink");
+		geoLinkIdx = geoLinkIdx == -1? -1: geoLinkIdx + "geoLink".length();
 		
-		int originalGeoLinkIdx = val.indexOf("originalGeoLink");
-		originalGeoLinkIdx = originalGeoLinkIdx == -1? -1: originalGeoLinkIdx + "originalGeoLink".length() + 1;
-		String originalGeoLink = originalGeoLinkIdx == -1? null: val.substring(originalGeoLinkIdx, val.length() - 1);
-		
-		return new KnowledgeResponse(responseBuilder(homePageIdx, val),
+		return new InfoResponse(responseBuilder(homePageIdx, val),
 				responseBuilder(labelIdx, val),
-				responseBuilder(broader1Idx, val),
-				responseBuilder(broader1HomePageIdx, val),
-				responseBuilder(broader1LabelIdx, val),
-				responseBuilder(broader2Idx, val),
-				responseBuilder(broader2HomePageIdx, val),
-				responseBuilder(broader2LabelIdx, val),
-				originalGeoLink
-				);
+				responseBuilder(geoLinkIdx, val));
 	}
 
 	private String responseBuilder(int propertyIdx, String val) {
