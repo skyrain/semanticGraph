@@ -39,19 +39,20 @@ public class QueryService {
 		ReasoningConnection connection = ConnectionConfiguration.from(DB_URL).credentials("admin", "admin")
 				.reasoning(true).connect().as(ReasoningConnection.class);
 
+		String criteria = normalizeSearch(search.getName());
 		StringBuilder query = new StringBuilder(PREFIXES);
 		query.append(
 				"select * " +
 				"where" +
 				"{  " +
 				"    optional{" +
-				"        dbr:"+ normalizeSearch(search.getName()) + " foaf:homepage ?homePage." +
+				"        dbr:"+ criteria + " foaf:homepage ?homePage." +
 				"    }" +
 				"    optional{" +
-				"        dbr:Category:"+ normalizeSearch(search.getName()) + " rdfs:label ?label." +
+				"        dbr:Category:"+ criteria + " rdfs:label ?label." +
 				"    }" +
 				"    optional{ " +
-				"        dbr:Category:"+ normalizeSearch(search.getName()) + " skos:broader ?broader1." +
+				"        dbr:Category:"+ criteria + " skos:broader ?broader1." +
 				"    }" +
 				"    optional{" +
 				"        ?broader1 foaf:homepage ?broader1HomePage ." +
@@ -68,6 +69,10 @@ public class QueryService {
 				"    optional{" +
 				"        ?broader2 rdfs:label ?broader2Label ." +
 				"    }" +
+				"	optional {" +
+				"		dbr:" + criteria +" owl:sameAs ?originalGeoLink ." +
+				"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
+				"	}" +
 				"}");
 
 		SelectQuery selectQuery = connection.select(query.toString());
@@ -106,9 +111,10 @@ public class QueryService {
 		int broader2HomePageIdx = val.indexOf("broader2HomePage");
 		broader2HomePageIdx = broader2HomePageIdx  == -1? -1: broader2HomePageIdx + "broader2HomePage".length(); 
 		int broader2LabelIdx = val.indexOf("broader2Label");
-		broader2LabelIdx = broader2LabelIdx == -1? -1: broader2LabelIdx + "broader2Label".length() + 1;
+		broader2LabelIdx = broader2LabelIdx == -1? -1: broader2LabelIdx + "broader2Label".length();
 		
-		String broader2LabelVal = broader2LabelIdx == -1? null: val.substring(broader2LabelIdx, val.length());
+		int originalGeoLinkIdx = val.indexOf("originalGeoLink") + "originalGeoLink".length() + 1;
+		String originalGeoLink = originalGeoLinkIdx == -1? null: val.substring(originalGeoLinkIdx, val.length() - 1);
 		
 		return new KnowledgeResponse(responseBuilder(homePageIdx, val),
 				responseBuilder(labelIdx, val),
@@ -117,7 +123,9 @@ public class QueryService {
 				responseBuilder(broader1LabelIdx, val),
 				responseBuilder(broader2Idx, val),
 				responseBuilder(broader2HomePageIdx, val),
-				broader2LabelVal);
+				responseBuilder(broader2LabelIdx, val),
+				originalGeoLink
+				);
 	}
 
 	private String responseBuilder(int propertyIdx, String val) {

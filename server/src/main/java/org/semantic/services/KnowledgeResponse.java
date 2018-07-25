@@ -11,12 +11,14 @@ public class KnowledgeResponse {
 	private String broader2;
 	private String broader2HomePage;
 	private String broader2Label;
-
+	private String originalGeoLink;
+	
 	public KnowledgeResponse(@JsonProperty("homePage") String homePage, @JsonProperty("label") String label,
 			@JsonProperty("broader1") String broader1, @JsonProperty("broader1HomePage") String broader1HomePage,
 			@JsonProperty("broader1Label") String broader1Label, @JsonProperty("broader2") String broader2,
 			@JsonProperty("broader2HomePage") String broader2HomePage,
-			@JsonProperty("broader2Label") String broader2Label) {
+			@JsonProperty("broader2Label") String broader2Label,
+			@JsonProperty("originalGeoLink") String originalGeoLink) {
 		this.homePage = homePage;
 		this.label = label;
 		this.broader1 = broader1;
@@ -25,6 +27,7 @@ public class KnowledgeResponse {
 		this.broader2 = broader2;
 		this.broader2HomePage = broader2HomePage;
 		this.broader2Label = broader2Label;
+		this.originalGeoLink = originalGeoLink;
 	}
 
 	public String getHomePage() {
@@ -89,5 +92,13 @@ public class KnowledgeResponse {
 
 	public void setBroader2Label(String broader2Label) {
 		this.broader2Label = broader2Label;
+	}
+
+	public String getOriginalGeoLink() {
+		return originalGeoLink;
+	}
+
+	public void setOriginalGeoLink(String originalGeoLink) {
+		this.originalGeoLink = originalGeoLink;
 	}
 }
