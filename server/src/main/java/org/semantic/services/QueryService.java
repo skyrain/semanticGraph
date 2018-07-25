@@ -23,9 +23,8 @@ public class QueryService {
 			+ "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"
 			+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>" + "PREFIX dbo: <http://dbpedia.org/ontology/>"
 			+ "PREFIX dbp: <http://dbpedia.org/property/>" + "PREFIX dbr: <http://dbpedia.org/resource/>"
-			+ "PREFIX dct: <http://purl.org/dc/terms/>"
-			+ "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> ");
-	
+			+ "PREFIX dct: <http://purl.org/dc/terms/>" + "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> ");
+
 	private String DB_URL = "http://localhost:5820/personDB";
 
 	@CrossOrigin
@@ -34,7 +33,7 @@ public class QueryService {
 		String criteria = normalizeSearch(search.getName());
 		return search(buildBasicQuery(criteria));
 	}
-	
+
 	@CrossOrigin
 	@RequestMapping(path = "/broaderExplore", method = RequestMethod.POST)
 	public List<InfoResponse> broaderExplore(@RequestBody Search search) {
@@ -42,23 +41,30 @@ public class QueryService {
 		return search(buildBroaderQuery(criteria));
 	}
 
+	@CrossOrigin
+	@RequestMapping(path = "/narrowerExplore", method = RequestMethod.POST)
+	public List<InfoResponse> narrowerExplore(@RequestBody Search search) {
+		String criteria = normalizeSearch(search.getName());
+		return search(buildNarrowerQuery(criteria));
+	}
+
 	private List<InfoResponse> search(String detailQuery) {
 		List<InfoResponse> ret = new ArrayList<>();
-		
+
 		ReasoningConnection connection = ConnectionConfiguration.from(DB_URL).credentials("admin", "admin")
 				.reasoning(true).connect().as(ReasoningConnection.class);
-		
+
 		StringBuilder query = new StringBuilder(PREFIXES);
 		query.append(detailQuery);
 
 		SelectQuery selectQuery = connection.select(query.toString());
 		TupleQueryResult result = selectQuery.execute();
-		
+
 		try {
 			while (result.hasNext()) {
 				String val = result.next().toString();
-				
-				if(val != null){
+
+				if (val != null) {
 					ret.add(resultBuilder(val));
 					System.out.println(val);
 				}
@@ -66,9 +72,54 @@ public class QueryService {
 		} catch (QueryEvaluationException e) {
 			e.printStackTrace();
 		}
-		
+
 		connection.close();
 		return ret;
+	}
+
+	private InfoResponse resultBuilder(String val) {
+		int homePageIdx = val.indexOf("homePage");
+		homePageIdx = homePageIdx == -1 ? -1 : homePageIdx + "homePage".length();
+		int labelIdx = val.indexOf("label");
+		labelIdx = labelIdx == -1 ? -1 : labelIdx + "label".length();
+		int geoLinkIdx = val.indexOf("geoLink");
+		geoLinkIdx = geoLinkIdx == -1 ? -1 : geoLinkIdx + "geoLink".length();
+
+		return new InfoResponse(responseBuilder(homePageIdx, val), responseBuilder(labelIdx, val),
+				responseBuilder(geoLinkIdx, val));
+	}
+
+	private String responseBuilder(int propertyIdx, String val) {
+		if (propertyIdx != -1) {
+			int nextColonIdx = val.indexOf(";", propertyIdx);
+
+			if (nextColonIdx == -1) {
+				return val.substring(propertyIdx + 1, val.length() - 1);
+			}
+			return val.substring(propertyIdx + 1, nextColonIdx);
+		}
+		return null;
+	}
+
+	public String normalizeSearch(String str) {
+		String res = "_" + str + "_";
+		res = res.replace(' ', '_');
+		res = res.toLowerCase();
+		char[] arr = res.toCharArray();
+
+		int i, j;
+		for (i = 1, j = 1; i < arr.length; i++, j++) {
+			if (arr[i - 1] == '_')
+				if (arr[i] == '_')
+					j--;
+				else
+					arr[i] -= 32;
+			arr[j] = arr[i];
+		}
+
+		res = String.valueOf(arr);
+		res = res.substring(1, j - 1);
+		return res;
 	}
 
 	private String buildBasicQuery(String criteria) {
@@ -107,53 +158,27 @@ public class QueryService {
 				"		dbr:" + criteria +" owl:sameAs ?geoLink ." +
 				"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
 				"	}" +
-				"}";
+				"}LIMIT 100";
 	}
 	
-	private InfoResponse resultBuilder(String val) {			
-		int homePageIdx = val.indexOf("homePage");
-		homePageIdx = homePageIdx  == -1? -1: homePageIdx + "homePage".length();
-		int labelIdx = val.indexOf("label");
-		labelIdx = labelIdx  == -1? -1: labelIdx + "label".length(); 		
-		int geoLinkIdx = val.indexOf("geoLink");
-		geoLinkIdx = geoLinkIdx == -1? -1: geoLinkIdx + "geoLink".length();
-		
-		return new InfoResponse(responseBuilder(homePageIdx, val),
-				responseBuilder(labelIdx, val),
-				responseBuilder(geoLinkIdx, val));
+	private String buildNarrowerQuery(String criteria) {
+		return 
+				"select * " +
+				"where" +
+				"{  " +
+				"    optional{ " +
+				"        dbr:Category:"+ criteria + " skos:narrower ?narrower." +
+				"    }" +
+				"    optional{" +
+				"        ?narrower foaf:homepage ?homePage ." +
+				"    }" +
+				"    optional{" +
+				"        ?narrower rdfs:label ?label .    " +
+				"    }" +
+				"	optional {" +
+				"		dbr:" + criteria +" owl:sameAs ?geoLink ." +
+				"		FILTER (NOT EXISTS{dbr:" + criteria + " rdf:type dbo:Settlement})" +
+				"	}" +
+				"}LIMIT 100";
 	}
-
-	private String responseBuilder(int propertyIdx, String val) {
-		if(propertyIdx != -1){
-			int nextColonIdx = val.indexOf(";", propertyIdx);
-			
-			if(nextColonIdx == -1){
-				return val.substring(propertyIdx + 1, val.length() - 1);
-			}
-			return val.substring(propertyIdx + 1, nextColonIdx);
-		}
-		return null;
-	}
-
-	public String normalizeSearch(String str) {
-		String res = "_" + str + "_";
-		res = res.replace(' ', '_');
-		res = res.toLowerCase();
-		char[] arr = res.toCharArray();
-
-		int i, j;
-		for (i = 1, j = 1; i < arr.length; i++, j++) {
-			if (arr[i - 1] == '_')
-				if (arr[i] == '_')
-					j--;
-				else
-					arr[i] -= 32;
-			arr[j] = arr[i];
-		}
-
-		res = String.valueOf(arr);
-		res = res.substring(1, j - 1);
-		return res;
-	}
-	
 }
