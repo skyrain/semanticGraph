@@ -113,7 +113,8 @@ public class QueryService {
 		int broader2LabelIdx = val.indexOf("broader2Label");
 		broader2LabelIdx = broader2LabelIdx == -1? -1: broader2LabelIdx + "broader2Label".length();
 		
-		int originalGeoLinkIdx = val.indexOf("originalGeoLink") + "originalGeoLink".length() + 1;
+		int originalGeoLinkIdx = val.indexOf("originalGeoLink");
+		originalGeoLinkIdx = originalGeoLinkIdx == -1? -1: originalGeoLinkIdx + "originalGeoLink".length() + 1;
 		String originalGeoLink = originalGeoLinkIdx == -1? null: val.substring(originalGeoLinkIdx, val.length() - 1);
 		
 		return new KnowledgeResponse(responseBuilder(homePageIdx, val),
@@ -130,7 +131,12 @@ public class QueryService {
 
 	private String responseBuilder(int propertyIdx, String val) {
 		if(propertyIdx != -1){
-			return val.substring(propertyIdx + 1, val.indexOf(";", propertyIdx));
+			int nextColonIdx = val.indexOf(";", propertyIdx);
+			
+			if(nextColonIdx == -1){
+				return val.substring(propertyIdx + 1, val.length() - 1);
+			}
+			return val.substring(propertyIdx + 1, nextColonIdx);
 		}
 		return null;
 	}
